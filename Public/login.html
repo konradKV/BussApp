@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BussApp – Logg inn</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-bus-bg"></div>
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="big-icon">🚌</span>
+      <h1>BUSSAPP</h1>
+      <p class="tagline">Skyss avgangsinformasjon · Bergen</p>
+    </div>
+
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="showTab('login', this)">Logg inn</button>
+      <button class="login-tab" onclick="showTab('register', this)">Registrer</button>
+    </div>
+
+    <div class="login-form-pane active" id="tabLogin">
+      <form action="/login" method="POST" style="display:flex;flex-direction:column;gap:1rem">
+        <div class="field">
+          <label>Brukernavn</label>
+          <input type="text" name="username" placeholder="ditt brukernavn" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Passord</label>
+          <input type="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;">Logg inn</button>
+      </form>
+    </div>
+
+    <div class="login-form-pane" id="tabRegister">
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div class="field">
+          <label>Brukernavn</label>
+          <input type="text" id="regUsername" placeholder="vel eit brukernavn" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Passord</label>
+          <input type="password" id="regPassword" placeholder="••••••••" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>E-post (valfritt)</label>
+          <input type="email" id="regEpost" placeholder="din@epost.no">
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doRegister()">Opprett konto</button>
+      </div>
+    </div>
+
+    <div class="login-feedback" id="loginFeedback"></div>
+  </div>
+</div>
+
+<script>
+function showTab(tab, btn) {
+  document.querySelectorAll('.login-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.login-form-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  document.getElementById('loginFeedback').textContent = '';
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const epost    = document.getElementById('regEpost').value.trim();
+  const fb = document.getElementById('loginFeedback');
+  if (!username || !password) { fb.textContent = 'Fyll inn brukernavn og passord'; return; }
+  const res  = await fetch('/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password, epost}) });
+  const data = await res.json();
+  if (data.ok) { window.location.href = '/'; }
+  else { fb.textContent = data.error || 'Registrering feila'; }
+}
+</script>
+</body>
+</html>

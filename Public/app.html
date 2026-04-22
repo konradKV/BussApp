@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BussApp</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <div class="logo-icon">🚌</div>
+    <h1>BUSSAPP</h1>
+  </div>
+  <div class="header-right">
+    <div class="nav-tabs" id="navTabs">
+      <button class="nav-tab active" data-page="avganger" onclick="showPage('avganger',this)"><span class="tab-icon">🕐</span> Avganger</button>
+      <button class="nav-tab" data-page="sok" onclick="showPage('sok',this)"><span class="tab-icon">🔎</span> Søk rute</button>
+      <button class="nav-tab" data-page="reiseplan" onclick="showPage('reiseplan',this)"><span class="tab-icon">🗺️</span> Reiseplan</button>
+      <button class="nav-tab" data-page="favoritt" onclick="showPage('favoritt',this)"><span class="tab-icon">⭐</span> Favoritt</button>
+      <button class="nav-tab" data-page="billett" onclick="showPage('billett',this)"><span class="tab-icon">🎫</span> Billettar</button>
+      <button class="nav-tab" data-page="historikk" onclick="showPage('historikk',this)"><span class="tab-icon">📋</span> Historikk</button>
+      <button class="nav-tab" data-page="admin" id="adminTab" onclick="showPage('admin',this)" style="display:none"><span class="tab-icon">🛡️</span> Admin</button>
+    </div>
+    <div class="user-chip">
+      <div class="avatar" id="userInitial">?</div>
+      <span id="userName">…</span>
+      <span id="adminBadge" style="display:none;margin-left:5px;background:var(--accent);color:#000;border-radius:4px;padding:1px 7px;font-size:0.67rem;font-weight:800;letter-spacing:0.05em">ADMIN</span>
+    </div>
+    <a href="/logout" class="btn btn-ghost btn-sm">Logg ut</a>
+  </div>
+</header>
+
+<div id="main-layout">
+
+  <!-- AVGANGER -->
+  <div class="page active" id="page-avganger">
+    <div class="search-section">
+      <div class="search-title">Søk etter stoppestader</div>
+      <div class="search-row">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="stopSearchInput" placeholder="t.d. Bystasjonen, Landåstorget…" oninput="onStopSearch(this.value)">
+          <div class="search-dropdown" id="stopDropdown"></div>
+        </div>
+        <button class="btn btn-primary" onclick="loadDepartures()">Vis avganger</button>
+      </div>
+    </div>
+    <div id="departureBoard" style="display:none">
+      <div class="departure-board">
+        <div class="board-header">
+          <div>
+            <div class="board-stop-name" id="boardStopName">–</div>
+            <div class="board-stop-id" id="boardStopId"></div>
+          </div>
+          <div class="board-actions">
+            <button class="board-refresh-btn" id="refreshBtn" onclick="refreshDepartures()" title="Oppdater">↻</button>
+            <button class="btn btn-sm btn-blue" id="favBtn" onclick="toggleFavStopp()">☆ Favoritt</button>
+          </div>
+        </div>
+        <div id="boardBody"><div class="board-empty">Lastar avganger…</div></div>
+      </div>
+    </div>
+    <div id="quickFavs" style="display:none">
+      <div class="section-header">
+        <h2>Favorittestopp</h2><div class="section-divider"></div>
+        <span class="section-count" id="quickFavCount">0</span>
+      </div>
+      <div class="fav-grid" id="quickFavGrid"></div>
+    </div>
+  </div>
+
+  <!-- SØK RUTE -->
+  <div class="page" id="page-sok">
+    <div class="search-section">
+      <div class="search-title">🔎 Finn bussrute mellom to stoppestader</div>
+      <p style="color:var(--muted);font-size:0.87rem;margin-bottom:1.4rem">Vel stoppestadene dine – appen finn kva registrerte linjer som køyrer mellom dei.</p>
+      <div class="planner-fields" style="margin-bottom:1.2rem">
+        <div>
+          <div style="font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:5px">Frå</div>
+          <div class="search-input-wrap">
+            <span class="search-icon">🟢</span>
+            <input type="text" id="sokFraInput" placeholder="Stoppestad du er på…" oninput="onSokSearch('fra',this.value)">
+            <div class="search-dropdown" id="sokFraDropdown"></div>
+          </div>
+        </div>
+        <button class="planner-swap" onclick="swapSok()" title="Bytt">⇄</button>
+        <div>
+          <div style="font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:5px">Til</div>
+          <div class="search-input-wrap">
+            <span class="search-icon">🔴</span>
+            <input type="text" id="sokTilInput" placeholder="Stoppestad du vil til…" oninput="onSokSearch('til',this.value)">
+            <div class="search-dropdown" id="sokTilDropdown"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="doSokRute()">🔎 Finn rute</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSok()">Nullstill</button>
+        <span id="sokHint" style="color:var(--muted);font-size:0.82rem"></span>
+      </div>
+    </div>
+    <div id="sokResults"></div>
+  </div>
+
+  <!-- REISEPLAN -->
+  <div class="page" id="page-reiseplan">
+    <div class="planner-card">
+      <div class="search-title" style="margin-bottom:1.2rem">🗺️ Reiseplanleggar (Skyss API)</div>
+      <div class="planner-fields">
+        <div>
+          <div class="search-input-wrap">
+            <span class="search-icon">🟢</span>
+            <input type="text" id="plannerFraInput" placeholder="Frå stoppestaden…" oninput="onPlannerSearch('fra',this.value)">
+            <div class="search-dropdown" id="plannerFraDropdown"></div>
+          </div>
+        </div>
+        <button class="planner-swap" onclick="swapPlanner()" title="Bytt">⇄</button>
+        <div>
+          <div class="search-input-wrap">
+            <span class="search-icon">🔴</span>
+            <input type="text" id="plannerTilInput" placeholder="Til stoppestaden…" oninput="onPlannerSearch('til',this.value)">
+            <div class="search-dropdown" id="plannerTilDropdown"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="doReiseplan()">Finn reise</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearPlanner()">Nullstill</button>
+      </div>
+    </div>
+    <div id="plannerResults"></div>
+  </div>
+
+  <!-- FAVORITT -->
+  <div class="page" id="page-favoritt">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="val" id="statFavStopp">0</span><span class="lbl">favorittStopp</span></div>
+      <div class="stat-pill"><span class="val" id="statFavLinje">0</span><span class="lbl">favorittLinjer</span></div>
+    </div>
+    <div class="fav-section">
+      <div class="section-header"><h2>⭐ Favorittestopp</h2><div class="section-divider"></div><span class="section-count" id="favStoppCount">0</span></div>
+      <div class="fav-grid" id="favStoppGrid"><div class="fav-empty">Ingen favorittStopp enno. Søk og trykk ☆ Favoritt.</div></div>
+    </div>
+    <div class="fav-section">
+      <div class="section-header"><h2>🚌 Favorittlinjer</h2><div class="section-divider"></div><span class="section-count" id="favLinjeCount">0</span></div>
+      <div class="fav-grid" id="favLinjeGrid"><div class="fav-empty">Ingen favorittlinjer enno.</div></div>
+    </div>
+  </div>
+
+  <!-- BILLETTAR -->
+  <div class="page" id="page-billett">
+    <div class="billett-layout">
+      <!-- Left: shop -->
+      <div class="billett-shop">
+        <div class="search-title" style="margin-bottom:0.4rem">🎫 Kjøp billett</div>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.2rem">Vel ein billettype nedanfor. Betalinga er simulert – ingen ekte betaling skjer.</p>
+        <div id="billettProduktList"><div class="board-empty">Lastar billettypar…</div></div>
+      </div>
+      <!-- Right: my tickets -->
+      <div class="billett-mine-wrap">
+        <div class="section-header" style="margin-bottom:1rem">
+          <h2>📱 Mine billettar</h2><div class="section-divider"></div>
+          <span class="section-count" id="mineBillettCount">0</span>
+        </div>
+        <div id="mineBillettList"><div class="board-empty">Ingen billettar enno.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORIKK -->
+  <div class="page" id="page-historikk">
+    <div class="section-header"><h2>📋 Reisehistorikk</h2><div class="section-divider"></div><span class="section-count" id="historikkCount">0</span></div>
+    <div class="historikk-list" id="historikkList"><div class="historikk-empty">Ingen reiser registrert enno.</div></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="page" id="page-admin">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.07em;color:var(--accent)">🛡️ Admin – Linjeadministrasjon</h2>
+        <p style="color:var(--muted);font-size:0.85rem;margin-top:4px">Berre admin-brukarar ser denne sida. Her kan du opprette, redigere og slette busslinjer.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openNyLinjeModal()">+ Ny linje</button>
+    </div>
+
+    <div class="section-header"><h2>Registrerte linjer</h2><div class="section-divider"></div><span class="section-count" id="adminLinjeCount">0</span></div>
+    <div id="adminLinjeList"><div class="board-empty">Lastar linjer…</div></div>
+
+    <div class="section-header" style="margin-top:2.5rem"><h2>Brukarar</h2><div class="section-divider"></div></div>
+    <div id="adminBrukereList"><div class="board-empty">Lastar brukarar…</div></div>
+  </div>
+
+</div>
+
+<!-- MODAL: Ny/Rediger linje -->
+<div class="modal-backdrop" id="linjeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="linjeModalTitle">Ny linje</h2>
+      <button class="modal-close" onclick="closeLinjeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="linjeModalId">
+      <div class="field"><label>Linjenummer *</label><input type="text" id="linjeNr" placeholder="t.d. 5, 12, 60"></div>
+      <div class="field"><label>Namn *</label><input type="text" id="linjeNamn" placeholder="t.d. Bystasjonen – Åsane"></div>
+      <div class="field">
+        <label>Type</label>
+        <select id="linjeType">
+          <option value="Buss">Buss</option>
+          <option value="Trikk">Trikk</option>
+          <option value="Bybane">Bybane</option>
+          <option value="Ferje">Ferje</option>
+          <option value="Ekspressbuss">Ekspressbuss</option>
+        </select>
+      </div>
+      <div class="field"><label>Beskriving</label><input type="text" id="linjeBesk" placeholder="Valfri beskriving"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLinjeModal()">Avbryt</button>
+      <button class="btn btn-primary" onclick="saveLinje()">Lagre</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Stoppestader på linje -->
+<div class="modal-backdrop" id="stoppModal">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <h2 id="stoppModalTitle">Stoppestader</h2>
+      <button class="modal-close" onclick="closeStoppModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="stoppListe" style="margin-bottom:1.2rem;display:flex;flex-direction:column;gap:8px"></div>
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:1rem">
+        <div style="font-size:0.74rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.8rem">Legg til stoppested</div>
+        <div class="search-input-wrap" style="margin-bottom:10px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="stoppSokInput" placeholder="Søk etter stoppested (Skyss)…" oninput="onAdminStoppSearch(this.value)">
+          <div class="search-dropdown" id="stoppSokDropdown"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+          <input type="number" id="stoppRekkefolge" placeholder="Rekkefølge (1, 2, 3…)"
+            style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:0.88rem">
+          <button class="btn btn-primary btn-sm" onclick="leggTilStopp()">+ Legg til</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeStoppModal()">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="./app.js"></script>
+</body>
+</html>
